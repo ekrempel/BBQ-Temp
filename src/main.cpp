@@ -15,17 +15,43 @@ const int analogInPin = GPIO_NUM_36;  // Analog input pin that the potentiometer
 //double SteinhartB=2.373151289e-4; // Steinhart-Hart B coefficient.
 //double SteinhartC=1.249333734e-7;  // Steinhart-Hart C coefficient.
 
+const int probe1meat = GPIO_NUM_36;
+const int probe2meat = GPIO_NUM_39;
+const int probe2oven = GPIO_NUM_34;
+
 double SteinhartA=0.3157857383e-3;  // Steinhart-Hart A coefficient.
 double SteinhartB=2.238394535e-04; // Steinhart-Hart B coefficient.
 double SteinhartC=-0.1725002939e-07;  // Steinhart-Hart C coefficient.
-double VoltageSupply = 3.31; // supply voltage of the thermistor-divider. Manually meter this for accuracy.
-double VoltageReading; // current voltage in the middle point of the thermistor-divider.
-unsigned long ResistanceFixed = 566000; // fixed resistor between thermistor and ground, measured in ohms. Meter this for accuracy.
-unsigned long ResistanceThermistor; // last calculated resistance of the thermistor, measured in ohms.
-unsigned int ADCReading;
-unsigned int BitResolution = pow(2, 12) - 1; // such as an 8bit, 10bit, or 12bit ADC. Most newer Arduino boards are 10bit.
 
-double Temperature; // calculated temperature in Kelvin.
+const double voltageSupply = 3.31;
+const unsigned int bitResolution = pow(2, 12) - 1;
+const unsigned long resistance = 566000;
+
+double measure(int pinNumber, double steinhartA, double steinhartB, double steinhartC) {
+  double adcReading = analogRead(analogInPin);
+  double voltageReading = ((double) adcReading / (double) bitResolution) * voltageSupply;
+  double resistanceThermistor = ((voltageSupply * (double) resistance) / voltageReading) - resistance;
+
+  double lnResist;
+  double temperature;
+
+  lnResist = log(resistanceThermistor);
+  temperature = steinhartA + (steinhartB * lnResist);
+  temperature = temperature + (steinhartC * lnResist * lnResist * lnResist);
+  temperature = (1.0 / temperature) - 273.15;
+
+  Serial.print("adc: ");
+  Serial.print(adcReading);
+  Serial.print(" voltage: ");
+  Serial.print(voltageReading);
+  Serial.print(" resistance: ");
+  Serial.print(resistanceThermistor);
+  Serial.print(" temperature: ");
+  Serial.print(temperature);
+  Serial.println(" °C");
+
+  return temperature;
+}
 
 void setup() {
   Serial.begin(115200);
@@ -40,40 +66,12 @@ void setup() {
 }
 
 void loop() {
-  // read the analog in value:
-  ADCReading = analogRead(analogInPin);               
-
-  // print the results to the serial monitor:
-  Serial.print("sensor = " );                       
-  Serial.println(ADCReading);      
-  
-  //Calculate the current voltage at Pin.
-  //Voltage Divider Equation: VMidPoint = (RBottom / (RTop+RBottom)) * VSupply
-  //...solving for: RTop = ((VSupply*Rbottom)/VMidPoint) - RBottom
-
-  //VoltageReading = ((double)ADCReading / (double)BitResolution) * VoltageSupply;
-  VoltageReading = ((double)ADCReading / (double)BitResolution) * VoltageSupply;
-  ResistanceThermistor = ((VoltageSupply*(double)ResistanceFixed) / VoltageReading) - ResistanceFixed;
-  //ResistanceThermistor = ((VoltageSupply*(double)ResistanceFixed) / VoltageReading) - ResistanceFixed;
-
-  Serial.print("voltage = " );                       
-  Serial.println(VoltageReading); 
-  
-  Serial.print("R = " );                       
-  Serial.println(ResistanceThermistor); 
-  
-  double LnResist;
-  LnResist = log(ResistanceThermistor); // no reason to calculate this multiple times.
-  Temperature = SteinhartA + (SteinhartB * LnResist);
-  Temperature = Temperature + (SteinhartC * LnResist * LnResist * LnResist);
-  Temperature = (1.0 / Temperature);
-  
-  Serial.print("Temp_K = " );                       
-  Serial.println(Temperature); 
-  
-  Serial.print("Temp_C = " );                       
-  Serial.println(Temperature - 273.15); 
-  
+  Serial.println("Probe 1 Meat");
+  double temp1 = measure(probe1meat, SteinhartA, SteinhartB, SteinhartC);
+  Serial.println("Probe 2 Meat");
+  double temp2 = measure(probe2meat, SteinhartA, SteinhartB, SteinhartC);
+  Serial.println("Probe 2 Oven");
+  double temp3 = measure(probe2oven, SteinhartA, SteinhartB, SteinhartC);
   delay(1000);                 
 
 }
