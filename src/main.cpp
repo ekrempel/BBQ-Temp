@@ -36,6 +36,8 @@ const int P2M = GPIO_NUM_32;
 // // We need to provide steinhart values for the temperature probes.
 // // Meat and oven probes stronly differ, as they have differnet ranges
 // // We use meat probes that have slightly different values.
+// // You can use this website to calibrate your probes
+// // https://www.thinksrs.com/downloads/programs/therm%20calc/ntccalibrator/ntccalculator.html
 
 //Steinhart Multy Probe - Meat
 double Multi_Meat_Steinhart_A = 1.310531755e-3;  // Steinhart-Hart A coefficient.
@@ -172,13 +174,27 @@ void loop()
   // }
   // client.loop();
 
-
-  Serial.print("MultiProbe - Meat");
-  double Multi_Meat_Temp = measure(P1M, Multi_Meat_Steinhart_A, Single_Meat_Steinhart_B, Multi_Meat_Steinhart_C);
-  Serial.print("MultiProbe - Oven");
-  double Multi_Oven_Temp = measure(P1O, Multi_Oven_Steinhart_A, Multi_Oven_Steinhart_B, Multi_Oven_Steinhart_C);
-  Serial.print("MultiProbe - Meat");
-  double Single_Meat_Temp = measure(P2M, Single_Meat_Steinhart_A, Single_Meat_Steinhart_B, Single_Meat_Steinhart_C);
+  if(DEBUG)
+  {
+    Serial.print("MultiProbe - Oven");
+    double Multi_Oven_Temp = measure(P1O, Multi_Oven_Steinhart_A, Multi_Oven_Steinhart_B, Multi_Oven_Steinhart_C);
+    Serial.print("MultiProbe - Meat");
+    double Multi_Meat_Temp = measure(P1M, Multi_Meat_Steinhart_A, Single_Meat_Steinhart_B, Multi_Meat_Steinhart_C);
+    Serial.print("SinglProbe - Meat");
+    double Single_Meat_Temp = measure(P2M, Single_Meat_Steinhart_A, Single_Meat_Steinhart_B, Single_Meat_Steinhart_C);
+  } else
+  {
+    double Multi_Oven_Temp = measure(P1O, Multi_Oven_Steinhart_A, Multi_Oven_Steinhart_B, Multi_Oven_Steinhart_C);
+    double Multi_Meat_Temp = measure(P1M, Multi_Meat_Steinhart_A, Single_Meat_Steinhart_B, Multi_Meat_Steinhart_C);
+    double Single_Meat_Temp = measure(P2M, Single_Meat_Steinhart_A, Single_Meat_Steinhart_B, Single_Meat_Steinhart_C);
+    Serial.print("| MultiProbe - Oven: ");
+    Serial.print(Multi_Oven_Temp);
+    Serial.print(" °C | MultiProbe - Meat: ");
+    Serial.print(Multi_Meat_Temp);
+    Serial.print(" °C | SingleProbe - Meat: ");
+    Serial.print(Single_Meat_Temp);
+    Serial.println(" °C|");
+  }
 
   // StaticJsonBuffer<200> jsonBuffer;
   // JsonObject& root = jsonBuffer.createObject();
