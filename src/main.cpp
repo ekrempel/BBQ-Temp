@@ -156,10 +156,12 @@ void mqtt_reconnect()
 
 void setup()
 {
-
+  Serial.begin(BAUD);
+  Serial.println("Starting setup:");
+  
   if (DEBUG)
   {
-    Serial.begin(BAUD);
+    
   }
 
   //wifi_setup();
@@ -193,7 +195,7 @@ void loop()
     Serial.print(Multi_Meat_Temp);
     Serial.print(" °C | SingleProbe - Meat: ");
     Serial.print(Single_Meat_Temp);
-    Serial.println(" °C|");
+    Serial.println(" °C |");
   }
 
   // StaticJsonBuffer<200> jsonBuffer;
