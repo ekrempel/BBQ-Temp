@@ -158,37 +158,37 @@ void setup()
 {
   Serial.begin(BAUD);
   Serial.println("Starting setup:");
-  
-  if (DEBUG)
-  {
-    
-  }
-
-  //wifi_setup();
-  //mqtt_setup();
+  wifi_setup();
+  mqtt_setup();
 }
 
 void loop()
 {
 
-  // if (!client.connected()) {
-  //   mqtt_reconnect();
-  // }
-  // client.loop();
+  //test if we have a mqtt connection and connect if not
+  if (!client.connected()) {
+    mqtt_reconnect();
+  }
+  //this will make the client read for mesages on mqtt
+  client.loop();
 
+  double Multi_Oven_Temp;
+  double Multi_Meat_Temp;
+  double Single_Meat_Temp;
+  
   if(DEBUG)
   {
     Serial.print("MultiProbe - Oven");
-    double Multi_Oven_Temp = measure(P1O, Multi_Oven_Steinhart_A, Multi_Oven_Steinhart_B, Multi_Oven_Steinhart_C);
+    Multi_Oven_Temp = measure(P1O, Multi_Oven_Steinhart_A, Multi_Oven_Steinhart_B, Multi_Oven_Steinhart_C);
     Serial.print("MultiProbe - Meat");
-    double Multi_Meat_Temp = measure(P1M, Multi_Meat_Steinhart_A, Single_Meat_Steinhart_B, Multi_Meat_Steinhart_C);
+    Multi_Meat_Temp = measure(P1M, Multi_Meat_Steinhart_A, Single_Meat_Steinhart_B, Multi_Meat_Steinhart_C);
     Serial.print("SinglProbe - Meat");
-    double Single_Meat_Temp = measure(P2M, Single_Meat_Steinhart_A, Single_Meat_Steinhart_B, Single_Meat_Steinhart_C);
+    Single_Meat_Temp = measure(P2M, Single_Meat_Steinhart_A, Single_Meat_Steinhart_B, Single_Meat_Steinhart_C);
   } else
   {
-    double Multi_Oven_Temp = measure(P1O, Multi_Oven_Steinhart_A, Multi_Oven_Steinhart_B, Multi_Oven_Steinhart_C);
-    double Multi_Meat_Temp = measure(P1M, Multi_Meat_Steinhart_A, Single_Meat_Steinhart_B, Multi_Meat_Steinhart_C);
-    double Single_Meat_Temp = measure(P2M, Single_Meat_Steinhart_A, Single_Meat_Steinhart_B, Single_Meat_Steinhart_C);
+    Multi_Oven_Temp = measure(P1O, Multi_Oven_Steinhart_A, Multi_Oven_Steinhart_B, Multi_Oven_Steinhart_C);
+    Multi_Meat_Temp = measure(P1M, Multi_Meat_Steinhart_A, Single_Meat_Steinhart_B, Multi_Meat_Steinhart_C);
+    Single_Meat_Temp = measure(P2M, Single_Meat_Steinhart_A, Single_Meat_Steinhart_B, Single_Meat_Steinhart_C);
     Serial.print("| MultiProbe - Oven: ");
     Serial.print(Multi_Oven_Temp);
     Serial.print(" °C | MultiProbe - Meat: ");
@@ -198,19 +198,22 @@ void loop()
     Serial.println(" °C |");
   }
 
-  // StaticJsonBuffer<200> jsonBuffer;
-  // JsonObject& root = jsonBuffer.createObject();
-
-  //JsonObject& probe1 = root.createNestedObject("probe1");
-  //JsonObject& probe2 = root.createNestedObject("probe2");
-
-  //probe1["meat"] = temp1;
-  // probe2["meat"] = temp2;
-  // probe2["oven"] = temp3;
-
+  //create a buffer for the mqtt message
+  StaticJsonBuffer<200> jsonBuffer;
   char jsonChar[100];
 
-  //root.printTo((char*)jsonChar, root.measureLength() + 1);
-  //client.publish("temperature", jsonChar);
+  //build a nested json message
+  JsonObject& root = jsonBuffer.createObject();
+  JsonObject& mp = root.createNestedObject("MP");
+  JsonObject& sp = root.createNestedObject("SP");  
+  mp["oven"] = Multi_Oven_Temp;
+  mp["meat"] = Multi_Meat_Temp;
+  sp["meat"] = Single_Meat_Temp;  
+
+  root.printTo((char*)jsonChar, root.measureLength() + 1);
+  //push the json message to mqtt topic temperature
+  client.publish("temperature", jsonChar);
+  
+  //wait 5 seconds before we start the next meassurement
   delay(5000);
 }
