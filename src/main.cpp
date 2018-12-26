@@ -25,11 +25,11 @@ const unsigned int bitResolution = pow(2, 12) - 1;
 // // meassure meat and oven temp.
 
 // Pins of Port 1, the first one meassures the meat, the second the oven temp
-const int P1M = GPIO_NUM_34;
-const int P1O = GPIO_NUM_35;
+const int mp_oven = GPIO_NUM_35;
+const int mp_meat = GPIO_NUM_34;
 
 // Pins of Port 2, here we use a probe that only meassures the meat
-const int P2M = GPIO_NUM_32;
+const int sp_meat = GPIO_NUM_32;
 // We dont read the second value, as we are not using a probe with two sensors here
 //const int P2O = GPIO_NUM_25;
 
@@ -40,20 +40,20 @@ const int P2M = GPIO_NUM_32;
 // // https://www.thinksrs.com/downloads/programs/therm%20calc/ntccalibrator/ntccalculator.html
 
 //Steinhart Multy Probe - Meat
-double Multi_Meat_Steinhart_A = 1.310531755e-3;  // Steinhart-Hart A coefficient.
-double Multi_Meat_Steinhart_B = 0.9098587657e-4; // Steinhart-Hart B coefficient.
-double Multi_Meat_Steinhart_C = 2.646335027e-7;  // Steinhart-Hart C coefficient.
+double mp_meat_Steinhart_A = 1.310531755e-3;  // Steinhart-Hart A coefficient.
+double mp_meat_Steinhart_B = 0.9098587657e-4; // Steinhart-Hart B coefficient.
+double mp_meat_Steinhart_C = 2.646335027e-7;  // Steinhart-Hart C coefficient.
 
 // TODO MEASSURE OVEN RESISTORE AND FIX VALUES
 //Steinhart Multy Probe - Oven
-double Multi_Oven_Steinhart_A = 1.310531755e-3;  // Steinhart-Hart A coefficient.
-double Multi_Oven_Steinhart_B = 0.9098587657e-4; // Steinhart-Hart B coefficient.
-double Multi_Oven_Steinhart_C = 2.646335027e-7;  // Steinhart-Hart C coefficient.
+double mp_oven_Steinhart_A = 1.310531755e-3;  // Steinhart-Hart A coefficient.
+double mp_oven_Steinhart_B = 0.9098587657e-4; // Steinhart-Hart B coefficient.
+double mp_oven_Steinhart_C = 2.646335027e-7;  // Steinhart-Hart C coefficient.
 
 //Steinhart Single Probe - Meat
-double Single_Meat_Steinhart_A = 1.310531755e-3;  // Steinhart-Hart A coefficient.
-double Single_Meat_Steinhart_B = 0.9098587657e-4; // Steinhart-Hart B coefficient.
-double Single_Meat_Steinhart_C = 2.646335027e-7;  // Steinhart-Hart C coefficient.
+double sp_meat_Steinhart_A = 1.310531755e-3;  // Steinhart-Hart A coefficient.
+double sp_meat_Steinhart_B = 0.9098587657e-4; // Steinhart-Hart B coefficient.
+double sp_meat_Steinhart_C = 2.646335027e-7;  // Steinhart-Hart C coefficient.
 
 // function to calculate the temperate of a probe connected to a given Pin
 double measure(int pinNumber, double steinhartA, double steinhartB, double steinhartC)
@@ -172,29 +172,29 @@ void loop()
   //this will make the client read for mesages on mqtt
   client.loop();
 
-  double Multi_Oven_Temp;
-  double Multi_Meat_Temp;
-  double Single_Meat_Temp;
+  double mp_oven_temp;
+  double mp_meat_temp;
+  double sp_meat_temp;
   
   if(DEBUG)
   {
     Serial.print("MultiProbe - Oven");
-    Multi_Oven_Temp = measure(P1O, Multi_Oven_Steinhart_A, Multi_Oven_Steinhart_B, Multi_Oven_Steinhart_C);
+    mp_oven_temp = measure(mp_oven, mp_oven_Steinhart_A, mp_oven_Steinhart_B, mp_oven_Steinhart_C);
     Serial.print("MultiProbe - Meat");
-    Multi_Meat_Temp = measure(P1M, Multi_Meat_Steinhart_A, Single_Meat_Steinhart_B, Multi_Meat_Steinhart_C);
-    Serial.print("SinglProbe - Meat");
-    Single_Meat_Temp = measure(P2M, Single_Meat_Steinhart_A, Single_Meat_Steinhart_B, Single_Meat_Steinhart_C);
+    mp_meat_temp = measure(mp_meat, mp_meat_Steinhart_A, sp_meat_Steinhart_B, mp_meat_Steinhart_C);
+    Serial.print("SingleProbe - Meat");
+    sp_meat_temp = measure(sp_meat, sp_meat_Steinhart_A, sp_meat_Steinhart_B, sp_meat_Steinhart_C);
   } else
   {
-    Multi_Oven_Temp = measure(P1O, Multi_Oven_Steinhart_A, Multi_Oven_Steinhart_B, Multi_Oven_Steinhart_C);
-    Multi_Meat_Temp = measure(P1M, Multi_Meat_Steinhart_A, Single_Meat_Steinhart_B, Multi_Meat_Steinhart_C);
-    Single_Meat_Temp = measure(P2M, Single_Meat_Steinhart_A, Single_Meat_Steinhart_B, Single_Meat_Steinhart_C);
+    mp_oven_temp = measure(mp_oven, mp_oven_Steinhart_A, mp_oven_Steinhart_B, mp_oven_Steinhart_C);
+    mp_meat_temp = measure(mp_meat, mp_meat_Steinhart_A, sp_meat_Steinhart_B, mp_meat_Steinhart_C);
+    sp_meat_temp = measure(sp_meat, sp_meat_Steinhart_A, sp_meat_Steinhart_B, sp_meat_Steinhart_C);
     Serial.print("| MultiProbe - Oven: ");
-    Serial.print(Multi_Oven_Temp);
+    Serial.print(mp_oven_temp);
     Serial.print(" °C | MultiProbe - Meat: ");
-    Serial.print(Multi_Meat_Temp);
+    Serial.print(mp_meat_temp);
     Serial.print(" °C | SingleProbe - Meat: ");
-    Serial.print(Single_Meat_Temp);
+    Serial.print(sp_meat_temp);
     Serial.println(" °C |");
   }
 
@@ -206,9 +206,9 @@ void loop()
   JsonObject& root = jsonBuffer.createObject();
   JsonObject& mp = root.createNestedObject("MP");
   JsonObject& sp = root.createNestedObject("SP");  
-  mp["oven"] = Multi_Oven_Temp;
-  mp["meat"] = Multi_Meat_Temp;
-  sp["meat"] = Single_Meat_Temp;  
+  mp["oven"] = mp_oven_temp;
+  mp["meat"] = mp_meat_temp;
+  sp["meat"] = sp_meat_temp;  
 
   root.printTo((char*)jsonChar, root.measureLength() + 1);
   //push the json message to mqtt topic temperature
